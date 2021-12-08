@@ -1,41 +1,52 @@
 use super::read_lines;
 
+// I was hoping for type checks but sadly the compiler will not complain :(
+type Bits6 = u32;
+type Bits2 = u32;
+type Bits3 = u32;
+type Bits5 = u32;
+type Bits4 = u32;
+type Bits7 = u32;
+
 #[derive(Debug, Clone)]
 enum Config {
-    Zero([u8; 6]),
-    One([u8; 2]),
-    Two([u8; 5]),
-    Three([u8; 5]),
-    Four([u8; 4]),
-    Five([u8; 5]),
-    Six([u8; 6]),
-    Seven([u8; 3]),
-    Eight([u8; 7]),
-    Nine([u8; 6]),
+    Zero(Bits6),
+    One(Bits2),
+    Two(Bits5),
+    Three(Bits5),
+    Four(Bits4),
+    Five(Bits5),
+    Six(Bits6),
+    Seven(Bits3),
+    Eight(Bits7),
+    Nine(Bits6),
 
-    TwoThreeFive([u8; 5]),
-    ZeroSixNine([u8; 6]),
+    TwoThreeFive(Bits5),
+    ZeroSixNine(Bits6),
 
-    ThreeFive([u8; 5]),
-    TwoFive([u8; 5]),
+    ThreeFive(Bits5),
+    TwoFive(Bits5),
 
-    ZeroSix([u8; 6]),
-    ZeroNine([u8; 6]),
+    ZeroSix(Bits6),
+    ZeroNine(Bits6),
 }
 
 impl TryFrom<&str> for Config {
     type Error = ();
 
     fn try_from(string: &str) -> Result<Config, Self::Error> {
-        let chars: Vec<_> = string.bytes().collect();
+        let chars = string
+            .bytes()
+            .map(|x| x + 1 - 97u8)
+            .fold(0, |acc, x| acc | (1 << x)) as u32;
 
         match string.len() {
-            2 => Ok(Config::One(chars.try_into().unwrap())),
-            3 => Ok(Config::Seven(chars.try_into().unwrap())),
-            4 => Ok(Config::Four(chars.try_into().unwrap())),
-            5 => Ok(Config::TwoThreeFive(chars.try_into().unwrap())),
-            6 => Ok(Config::ZeroSixNine(chars.try_into().unwrap())),
-            7 => Ok(Config::Eight(chars.try_into().unwrap())),
+            2 => Ok(Config::One(chars as Bits2)),
+            3 => Ok(Config::Seven(chars as Bits3)),
+            4 => Ok(Config::Four(chars as Bits4)),
+            5 => Ok(Config::TwoThreeFive(chars as Bits5)),
+            6 => Ok(Config::ZeroSixNine(chars as Bits6)),
+            7 => Ok(Config::Eight(chars as Bits7)),
             _ => Err(()),
         }
     }
@@ -87,15 +98,8 @@ fn solve_first(outputs: &[[Config; 4]]) {
     println!("The answer is {}", count);
 }
 
-fn count_common(a: &[u8], b: &[u8]) -> usize {
-    let mut common = 0;
-    for i in a {
-        if b.contains(i) {
-            common += 1;
-        }
-    }
-
-    common
+fn count_common(a: u32, b: u32) -> u32 {
+    (a & b).count_ones()
 }
 
 fn configs_to_number(configs: &[Config]) -> Option<u32> {
@@ -123,25 +127,25 @@ fn configs_to_number(configs: &[Config]) -> Option<u32> {
 macro_rules! unwrap_enum {
     ($obj:expr) => {
         match ($obj) {
-            Config::Zero(x) => &x[..],
-            Config::One(x) => &x[..],
-            Config::Two(x) => &x[..],
-            Config::Three(x) => &x[..],
-            Config::Four(x) => &x[..],
-            Config::Five(x) => &x[..],
-            Config::Six(x) => &x[..],
-            Config::Seven(x) => &x[..],
-            Config::Eight(x) => &x[..],
-            Config::Nine(x) => &x[..],
+            Config::Zero(x) => x,
+            Config::One(x) => x,
+            Config::Two(x) => x,
+            Config::Three(x) => x,
+            Config::Four(x) => x,
+            Config::Five(x) => x,
+            Config::Six(x) => x,
+            Config::Seven(x) => x,
+            Config::Eight(x) => x,
+            Config::Nine(x) => x,
 
-            Config::TwoThreeFive(x) => &x[..],
-            Config::ZeroSixNine(x) => &x[..],
+            Config::TwoThreeFive(x) => x,
+            Config::ZeroSixNine(x) => x,
 
-            Config::ThreeFive(x) => &x[..],
-            Config::TwoFive(x) => &x[..],
+            Config::ThreeFive(x) => x,
+            Config::TwoFive(x) => x,
 
-            Config::ZeroSix(x) => &x[..],
-            Config::ZeroNine(x) => &x[..],
+            Config::ZeroSix(x) => x,
+            Config::ZeroNine(x) => x,
         }
     };
 }
@@ -164,7 +168,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::One(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             1 => resolved[i] = Config::TwoFive(v),
                             2 => resolved[i] = Config::Three(v),
                             _ => unreachable!("logic error!"),
@@ -172,7 +176,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     } else if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::Four(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             2 => resolved[i] = Config::Two(v),
                             3 => resolved[i] = Config::ThreeFive(v),
                             _ => unreachable!("logic error!"),
@@ -180,7 +184,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     } else if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::Seven(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             2 => resolved[i] = Config::TwoFive(v),
                             3 => resolved[i] = Config::Three(v),
                             _ => unreachable!("logic error!"),
@@ -193,7 +197,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::One(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             1 => resolved[i] = Config::Six(v),
                             2 => resolved[i] = Config::ZeroNine(v),
                             _ => unreachable!("logic error!"),
@@ -201,7 +205,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     } else if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::Four(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             3 => resolved[i] = Config::ZeroSix(v),
                             4 => resolved[i] = Config::Nine(v),
                             _ => unreachable!("logic error!"),
@@ -209,7 +213,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     } else if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::Seven(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             2 => resolved[i] = Config::Six(v),
                             3 => resolved[i] = Config::ZeroNine(v),
                             _ => unreachable!("logic error!"),
@@ -222,7 +226,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::One(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             1 => resolved[i] = Config::Five(v),
                             2 => resolved[i] = Config::Three(v),
                             _ => unreachable!("logic error!"),
@@ -230,7 +234,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     } else if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::Seven(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             2 => resolved[i] = Config::Five(v),
                             3 => resolved[i] = Config::Three(v),
                             _ => unreachable!("logic error!"),
@@ -243,7 +247,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::Four(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             2 => resolved[i] = Config::Two(v),
                             3 => resolved[i] = Config::Five(v),
                             _ => unreachable!("logic error!"),
@@ -256,7 +260,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::Four(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             3 => resolved[i] = Config::Zero(v),
                             4 => resolved[i] = Config::Nine(v),
                             _ => unreachable!("logic error!"),
@@ -269,7 +273,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::One(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             1 => resolved[i] = Config::Six(v),
                             2 => resolved[i] = Config::Zero(v),
                             _ => unreachable!("logic error!"),
@@ -277,7 +281,7 @@ fn deduce_one(observation: &[Config; 10], output: &[Config; 4]) -> u32 {
                     } else if let Some(m) =
                         find_matching!(resolved.iter().chain(observation), Config::Seven(_))
                     {
-                        match count_common(m, &v) {
+                        match count_common(*m, v) {
                             2 => resolved[i] = Config::Six(v),
                             3 => resolved[i] = Config::Zero(v),
                             _ => unreachable!("logic error!"),
