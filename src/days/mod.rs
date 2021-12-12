@@ -13,6 +13,7 @@ pub mod day08;
 pub mod day09;
 pub mod day10;
 pub mod day11;
+pub mod day12;
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
