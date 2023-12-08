@@ -22,3 +22,16 @@ macro_rules! impl_dayx {
         }
     };
 }
+
+pub fn gcd(mut a: u64, mut b: u64) -> u64 {
+    while b > 0 {
+        let tmp = b;
+        b = a % b;
+        a = tmp;
+    }
+    a
+}
+
+pub fn lcm(a: u64, b: u64) -> u64 {
+    (a / gcd(a, b)) * b
+}
