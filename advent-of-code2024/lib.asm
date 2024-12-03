@@ -16,14 +16,13 @@ atou:
     cmp rsi, 0
     je .done
 
-    mov dl, byte [rdi]
-    cmp dl, '0'
+    mov cl, byte [rdi]
+    cmp cl, '0'
     jb .skip
 
-    sub dl, '0'
-    movzx rcx, dl
-
-    cmp rdx, r8
+    sub cl, '0'
+    movzx rcx, cl
+    cmp rcx, r8
     jae .skip
 
     or r9b, 1
@@ -156,7 +155,6 @@ read_line:
 global exit
 exit:
     ; 60 = exit
-    xor rdi, rdi
     mov rax, 0x3c
     syscall
     db 0xCC
