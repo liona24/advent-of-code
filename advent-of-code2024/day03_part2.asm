@@ -24,7 +24,16 @@ _start:
     ; je .final
     ; inc qword [rsp]
     ;
-    ; Unoptimized, we hit 0.7 GiByte / sec for the current implementation
+    ; Unoptimized, we hit 1.47 GiByte / sec for the current implementation
+    ; The optimized C code runs with 1.64 GiByte / sec
+    ;
+    ; Micro optimization: Do not use mul instruction, rather use combination of
+    ;    lea: + 0.13 GiByte / sec
+    ;
+    ; Failed optimization: Only fetch dwords for the initial comparison of the
+    ;    prefixes: - 0.3 GiByte / sec
+    ;  - Interestingly, the C code gets worse when prefetching qwords :O
+    ;
 
     lea rbp, [rel buffer]
 
@@ -60,8 +69,7 @@ _start:
     shl rdi, 8
     mov rax, `\0don't()`
     cmp rdi, rax
-    sete dil
-    xor r15b, dil
+    setne r15b
     jmp .next
 
     .parse_mul_0:
@@ -89,9 +97,13 @@ _start:
     ja .next
 
     sub dil, '0'
+    ; small micro optimization: do not use mul instruction
+    ; movzx rdi, dil
+    ; mul r8
+    ; add rax, rdi
+    lea rax, [rax + 4 * rax]
     movzx rdi, dil
-    mul r8
-    add rax, rdi
+    lea rax, [rdi + 2 * rax]
 
     inc r12
     jmp .next_char_0
@@ -125,9 +137,13 @@ _start:
     ja .next
 
     sub dil, '0'
+    ; small micro optimization: do not use mul instruction
+    ; movzx rdi, dil
+    ; mul r8
+    ; add rax, rdi
+    lea rax, [rax + 4 * rax]
     movzx rdi, dil
-    mul r8
-    add rax, rdi
+    lea rax, [rdi + 2 * rax]
 
     jmp .next_char_1
 
