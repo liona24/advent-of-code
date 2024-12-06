@@ -2,8 +2,8 @@
 
 %include "lib.asm"
 
-%define N_MAX 0x1000
-%define N_SHIFT 12
+%define N_SHIFT 8
+%define N_MAX (1 << N_SHIFT)
 
 
 global _start
@@ -85,7 +85,9 @@ _start:
     mov al, byte [rdi + rcx]
     cmp al, '#'
     je .change_direction
-    jl .next_move
+    ; small optimization: we know that '.' > '#', thus we can short-circuit jb
+    ; for all the squares that were counted and are 0 now
+    jb .next_move
 
     xor byte [rdi + rcx], al
     inc r15
