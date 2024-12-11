@@ -1,11 +1,12 @@
 [bits 64]
 
-; convert string to number base 10 ignoring invalid characters
+; convert string to unsigned number base 10 ignoring invalid characters
 ; [in]  rdi: char*  - input string
 ; [in]  rsi: size_t - input string length
 ; [out] rax: size_t - string converted to unsigned integer base 10
 ;                      rdi, rsi can be assumed to be consistent with the last
 ;                      character read
+global atou
 atou:
     xor rax, rax
     mov r8, 10
@@ -45,6 +46,38 @@ atou:
     jmp .continue
 
     .done:
+    ret
+
+
+; convert unsigned number to string
+; [in,out] rdi: char*  - string to place result into
+; [in]     rsi: size_t - number
+; [out]    rax: number of digits written
+global utoa
+utoa:
+    mov r8, rsi
+    mov rsi, rsp
+    mov ecx, 10
+
+    .next_digit:
+    dec rsi
+
+    xor edx, edx
+    mov rax, r8
+    div rcx
+
+    add dl, '0'
+    mov byte [rsi], dl
+
+    mov r8, rax
+    test rax, rax
+    jne .next_digit
+
+    mov rcx, rsp
+    sub rcx, rsi
+    mov rax, rcx
+    rep movsb
+
     ret
 
 
