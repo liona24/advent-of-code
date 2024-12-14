@@ -1,5 +1,69 @@
 [bits 64]
 
+; convert string to signed number base 10 ignoring invalid characters
+; [in]  rdi: char*  - input string
+; [in]  rsi: size_t - input string length
+; [out] rax: size_t - string converted to unsigned integer base 10
+;                      rdi, rsi can be assumed to be consistent with the last
+;                      character read
+global atoi
+atoi:
+    push rbx
+
+    xor rax, rax
+    mov r8, 10
+    ; keep track of converted characters to only skip at the beginning
+    xor r9b, r9b
+    ; sign
+    xor ebx, ebx
+
+    .next_char:
+    cmp rsi, 0
+    je .done
+
+    mov cl, byte [rdi]
+    cmp cl, '0'
+    jb .skip
+
+    sub cl, '0'
+    movzx rcx, cl
+    cmp rcx, r8
+    jae .skip
+
+    or r9b, 1
+
+    mul r8
+    add rax, rcx
+
+    .continue:
+    inc rdi
+    dec rsi
+    jmp .next_char
+
+    .skip:
+    test rax, rax
+    jnz .done
+
+    test r9b, r9b
+    jnz .done
+
+    ; small optimization: we know we can only get here through the first
+    ; skip branch because '-' < '0'
+    cmp cl, '-'
+    sete bl
+
+    jmp .continue
+
+    .done:
+    ; apply sign
+    mov rcx, rbx
+    neg rcx
+    xor rax, rcx
+    add rax, rbx
+
+    pop rbx
+    ret
+
 ; convert string to unsigned number base 10 ignoring invalid characters
 ; [in]  rdi: char*  - input string
 ; [in]  rsi: size_t - input string length
