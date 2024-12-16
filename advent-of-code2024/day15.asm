@@ -2,8 +2,8 @@
 
 %include "lib.asm"
 
-%define MAX_SIZE 0x4000
-%define DIR_BUF_SIZE 0x8000
+%define MAX_SIZE 64
+%define DIR_BUF_SIZE 0x4000
 
 global _start
 _start:
@@ -71,28 +71,24 @@ _start:
     lea rbp, [rel directions]
     .next_direction:
 
+    xor r8d, r8d
     mov al, byte [rbp]
-    cmp al, '>'
-    je .right
-    cmp al, '<'
-    je .left
-    cmp al, '^'
-    je .up
-    cmp al, 'v'
-    je .down
-    jmp .print_solution
 
-    .right:
-    mov r8, 1
-    jmp .try_move
-    .left:
-    mov r8, -1
-    jmp .try_move
-    .up:
-    mov r8, -MAX_SIZE
-    jmp .try_move
-    .down:
-    mov r8, MAX_SIZE
+    mov rdx, 1
+    cmp al, '>'
+    cmove r8, rdx
+    neg rdx
+    cmp al, '<'
+    cmove r8, rdx
+    mov rdx, MAX_SIZE
+    cmp al, 'v'
+    cmove r8, rdx
+    neg rdx
+    cmp al, '^'
+    cmove r8, rdx
+
+    test r8, r8
+    jz .print_solution
 
     .try_move:
     lea rdi, [r15 + r8]
