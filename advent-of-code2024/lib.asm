@@ -36,8 +36,8 @@ atoi:
     add rax, rcx
 
     .continue:
-    inc rdi
-    dec rsi
+    add rdi, 1
+    sub rsi, 1
     jmp .next_char
 
     .skip:
@@ -96,8 +96,8 @@ atou:
     add rax, rcx
 
     .continue:
-    inc rdi
-    dec rsi
+    add rdi, 1
+    sub rsi, 1
     jmp .next_char
 
     .skip:
@@ -124,7 +124,7 @@ utoa:
     mov ecx, 10
 
     .next_digit:
-    dec rsi
+    sub rsi, 1
 
     xor edx, edx
     mov rax, r8
@@ -148,11 +148,10 @@ utoa:
 global print_number
 ; [in] rdi: ssize_t - number to print
 print_number:
-    lea rsi, [rsp - 1]
+    lea rsi, [rsp - 2]
 
     mov al, 0xa  ; newline
-    mov byte [rsi], al
-    dec rsi
+    mov byte [rsi + 1], al
 
     xor r8, r8
 
@@ -160,7 +159,7 @@ print_number:
     jge .convert_to_string
 
     neg rdi
-    inc r8
+    add r8, 1
 
     .convert_to_string:
 
@@ -182,10 +181,10 @@ print_number:
 
     mov al, '-'
     mov byte [rsi], al
-    dec rsi
+    sub rsi, 1
 
     .no_sign:
-    inc rsi
+    add rsi, 1
 
     ; 1 = write
     mov rax, 1
